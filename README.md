@@ -14,12 +14,11 @@ The FIC approach was validated on a 300k LOC Rust codebase (BAML) — an enginee
 
 ## Quick Start
 
-### 1. Copy commands into your project
+### 1. Copy `.claude/` into your project
 
 ```bash
 # From your project root
-mkdir -p .claude/commands
-cp commands/*.md .claude/commands/
+cp -r path/to/claude-blueprint/.claude .
 ```
 
 ### 2. Customize `_plans-config.md`
