@@ -36,23 +36,12 @@ That's it. The command orchestrates the full pipeline with checkpoints between e
 
 ## Commands
 
-### Core Workflow
-
 | Command | Description |
 | --- | --- |
 | `/blueprint` | Runs the full research > plan > execute pipeline in one shot with checkpoints between each phase. **Start here.** |
 | `/research` | Researches the codebase around a task and writes a structured artifact to `~/.claude/projects/.../plans/`. Spawns parallel Explore agents, then synthesizes findings into a doc with file:line refs, data flows, constraints, and open questions. |
 | `/plan` | Reads a research artifact and produces a phased implementation plan. Presents design options for buy-in, resolves open questions, and structures each phase with specific file changes, code snippets, and verification checklists. |
 | `/execute-plan` | Implements a plan phase by phase, pausing for human verification between each. Tracks progress via TodoWrite, runs lint/tests, and surfaces plan-vs-reality mismatches instead of silently improvising. |
-
-### Supporting Commands
-
-| Command | Description |
-| --- | --- |
-| `/code-coverage` | Analyzes branch changes against a base branch, identifies coverage gaps, and feeds targets into the blueprint workflow to generate tests. *Work in progress.* |
-| `/review-changes` | Reviews code changes against project standards before creating a PR. Supports quick mode (standards only) and full mode (lint + tests + coverage). |
-| `/pr-summary` | Generates a copy-pasteable PR summary via three-dot diff against a base branch. |
-| `/commit` | Reviews git changes and creates a commit with a conventional commit message. |
 
 ### Shared Config
 
@@ -128,11 +117,7 @@ See [`examples/`](examples/) for full configurations for Angular, React, and Pyt
 
 ### Verification Commands
 
-The execute and review commands reference lint/test commands. Update these references in the command files to match your project's tooling:
-
-- `execute-plan.md` Step 5 — your lint and test commands
-- `review-changes.md` Phase 1 — your validation tools
-- `code-coverage.md` Step 4 — your coverage runner
+The `execute-plan.md` command references lint/test commands (Step 5). Update these to match your project's tooling.
 
 ## Tips
 
