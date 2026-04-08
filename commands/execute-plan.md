@@ -8,7 +8,7 @@ model: opus
 Implement an approved plan phase by phase. **Follow the plan's intent while adapting to reality.** Surface mismatches immediately rather than silently improvising.
 
 **Default mode**: One phase at a time, pausing for human verification.
-**Consecutive mode**: If the user says "run all phases" or "skip pauses", execute all phases but still run verification at the end.
+**Consecutive mode**: If the user says "run all phases" or "skip pauses", execute all phases but still stop at Verification Gates and run the final regression check.
 
 ## User-Provided Context
 
@@ -39,7 +39,19 @@ Summarize to user: plan name, phases total/completed, starting phase, standards 
 
 ---
 
-## Step 4: Implement the Current Phase
+## Step 4: Assess Context Before Each Phase
+
+Before starting each phase (including the first), assess your context weight.
+
+After completing 3+ phases in this session, tell the user: "Context is getting heavy. I recommend running `/clear` and resuming with `/execute-plan <path>` — the checkbox state in the plan file lets me pick up exactly where I left off."
+
+Do NOT silently continue with degraded output quality. The plan's checkbox state is designed for exactly this purpose.
+
+---
+
+## Step 5: Implement the Current Phase
+
+Re-read the plan file from disk at the start of each phase — do NOT rely on memory of it.
 
 Execute all changes listed. Follow code snippets faithfully. Apply all project coding standards.
 
@@ -47,21 +59,23 @@ Execute all changes listed. Follow code snippets faithfully. Apply all project c
 
 ---
 
-## Step 5: Run Automated Verification
+## Step 6: Run Automated Verification
 
 Run lint, tests, and any other commands from the phase's "Automated Verification" section. Fix all issues to zero errors before proceeding.
 
 ---
 
-## Step 6: Update Plan Checkboxes
+## Step 7: Update Plan Checkboxes
 
 Mark automated verification items as `- [x]` in the plan file. Do NOT check off manual items.
 
 ---
 
-## Step 7: Pause for Human Verification (Default Mode Only)
+## Step 8: Pause for Human Verification (Default Mode Only)
 
-Present automated checks that passed and manual checks needed, then use `AskUserQuestion`:
+If the plan contains a `### Verification Gate` at this point, this is a **mandatory stop** even in consecutive mode. Present the gate's criteria and wait for confirmation.
+
+For regular phase boundaries in default mode: present automated checks that passed and manual checks needed, then use `AskUserQuestion`:
 
 - **Question**: "Phase [N] automated checks passed. Please verify the manual items above — how did it go?"
 - **Options**: "All good" / "Found an issue" / "Stop here"
@@ -70,15 +84,23 @@ After confirmation, update manual checkboxes to `- [x]` in the plan file.
 
 ---
 
-## Step 8: Repeat
+## Step 9: Repeat
 
-Repeat Steps 4-7 for each remaining phase.
+Repeat Steps 4-8 for each remaining phase.
 
 ---
 
-## Step 9: Final Summary
+## Step 10: Regression Check
+
+After all phases are complete, re-run ALL automated verification commands from ALL phases (not just the last one). Earlier phases can regress during later implementation. Report any failures before presenting the final summary.
+
+---
+
+## Step 11: Final Summary
 
 Present: all files changed with summaries, then suggest next steps (review changes, create PR, etc.). Note any non-obvious behaviors worth documenting in project knowledge files.
+
+To validate implementation against the plan, run `/validate-plan <path>`.
 
 ---
 
@@ -87,4 +109,5 @@ Present: all files changed with summaries, then suggest next steps (review chang
 - Never implement Phase N+1 before Phase N is confirmed
 - If plan code violates project standards, implement the correct version and note the deviation
 - No improvisation — surface mismatches, don't silently fix them
-- If context gets long, re-read the plan file rather than relying on memory
+- At the start of each phase, always re-read the plan file from disk — do NOT rely on memory of it
+- Verification Gates in the plan are mandatory stops, even in consecutive mode

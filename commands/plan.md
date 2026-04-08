@@ -1,5 +1,5 @@
 ---
-description: Read a research artifact and create a detailed, phased implementation plan in ~/.claude/projects/.../plans/
+description: Read a research artifact and create a detailed, phased implementation plan
 model: opus
 ---
 
@@ -21,7 +21,7 @@ If `$ARGUMENTS` contains a file path, read it FULLY now. If no path provided, as
 
 ## Step 2: Track Planning Progress
 
-Use `TodoWrite` with tasks: read research + files, present design options, resolve questions, get phase buy-in, write plan.
+Use `TodoWrite` with tasks: read research + files, present understanding, present design options, resolve questions, get phase buy-in, write plan.
 
 ---
 
@@ -33,32 +33,40 @@ Read all files from the research artifact's "Relevant Files" table. Read the rel
 
 ## Step 4: Determine Artifact Path
 
-Read `.claude/commands/_plans-config.md` and follow it to derive `$PLANS_DIR` and the artifact filename (use `plan-` prefix).
+Read `.claude/commands/_plans-config.md` and follow it to derive `$PLANS_DIR` and the artifact filename (use `plan-` prefix, write to `$PLANS_DIR/plans/`).
 
 ---
 
-## Step 5: Present Understanding + Design Options
+## Step 5: Present Understanding
 
-Present as text: task understanding (1-2 sentences), current state (key file:line discoveries), any questions from code.
+Present as text (no user input needed yet):
 
-Then use `AskUserQuestion` to get the user's decision on approach:
+- **Task understanding**: 1-2 sentences on what needs to happen
+- **Current state**: Key file:line discoveries from the research and your own reading
+- **Questions from code**: Anything the code reveals that wasn't in the research
+
+Verify assumptions with code — do NOT just accept what the user says without checking.
+
+---
+
+## Step 6: Present Design Options
+
+Use `AskUserQuestion` to get the user's decision on approach:
 
 - Present 2-4 concrete approaches with pros/cons as options
 - Mark recommended option with "(Recommended)"
 - Use `preview` field for code patterns or architecture comparisons
 - Bundle additional design questions as separate questions (up to 4 per call)
 
-Verify assumptions with code — do NOT just accept what the user says without checking.
-
 ---
 
-## Step 6: Resolve All Open Questions
+## Step 7: Resolve All Open Questions
 
 If answers raise new questions, spawn a targeted `Explore` agent to verify. Do NOT write the plan with any unresolved questions.
 
 ---
 
-## Step 7: Present Plan Structure for Buy-In
+## Step 8: Present Plan Structure for Buy-In
 
 Present phase names with 1-sentence descriptions, then use `AskUserQuestion`:
 
@@ -67,21 +75,24 @@ Present phase names with 1-sentence descriptions, then use `AskUserQuestion`:
 
 ---
 
-## Step 8: Write the Full Plan Artifact
+## Step 9: Write the Full Plan Artifact
 
-Write to the path from Step 4. Required sections:
+Write to the path from Step 4. Start with the YAML frontmatter from `_plans-config.md` (type: plan, status: draft). Include the research artifact path in the header.
 
-- **Header**: Date, Branch, Ticket, Research path
+Required sections:
+
 - **Overview**: 2-3 sentences — what, why, intended outcome
 - **Current State**: What exists, what's missing, file:line refs
-- **What We're NOT Doing**: Explicit out-of-scope items
+- **What We're NOT Doing**: 3-5 specific items, each with a brief rationale for why it's excluded. This section prevents scope creep during execution.
 
 **Per phase**:
 
 - **Overview**: What it accomplishes and why it's in this order
 - **Files to Change**: Each file with change summary and key code snippets
-- **Automated Verification**: Checkboxes for lint, test commands, etc.
-- **Manual Verification**: Checkboxes for UI/behavior testing
+- **Automated Verification**: Checkboxes for runnable commands only (lint, test, build). These must be commands that can be copy-pasted into a terminal.
+- **Manual Verification**: Checkboxes for human-observable behaviors only (click X, verify Y appears, confirm Z works).
+
+**For plans with 5+ phases**: Insert a `### Verification Gate` section between every 2-3 phases. State what should be fully working at that point and what the user should test before continuing. These gates are mandatory stops during execution.
 
 **Footer sections**: Testing Strategy, Standards Compliance (list which standards files apply), References.
 
@@ -89,13 +100,13 @@ All code snippets must comply with your project's coding standards.
 
 ---
 
-## Step 9: Present the Artifact
+## Step 10: Present the Artifact
 
 Read the artifact file and output its full contents as markdown in the conversation so the user can review it in a formatted view.
 
 ---
 
-## Step 10: Present Plan for Review
+## Step 11: Present Plan for Review
 
 State the artifact path, then use `AskUserQuestion`:
 
@@ -103,3 +114,5 @@ State the artifact path, then use `AskUserQuestion`:
 - **Options**: "Ready to implement" / "Add requirements" / "Revise phases" / "Stop here"
 
 Handle each response accordingly. If scope exceeds research coverage, ask whether to run `/research` first.
+
+To revise this plan later, run `/iterate-plan <path>`.
