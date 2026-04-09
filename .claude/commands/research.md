@@ -17,6 +17,32 @@ $ARGUMENTS
 
 ---
 
+## Step 0: Check Arguments
+
+If `$ARGUMENTS` is empty or contains only whitespace, present usage help following the Usage Help template from `_plans-config.md` and stop:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◇ Research
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Usage: /research <task description>
+
+Researches the codebase using specialized
+agents and writes a structured artifact
+with file:line refs, data flows, and
+constraints.
+
+Example:
+  /research Add user preferences API
+  /research Fix auth middleware timeout
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Do NOT proceed to Step 1. Return after showing usage.
+
+---
+
 ## Step 1: Determine Artifact Path
 
 Read `.claude/commands/_plans-config.md` and follow it to derive `$PLANS_DIR` and the artifact filename (use `research-` prefix, write to `$PLANS_DIR/research/`). Also run `git rev-parse --short HEAD` for the commit hash.
@@ -52,7 +78,7 @@ Launch 2-3 agents in **parallel** (single message). Choose from these three agen
 ### Locator Agent
 Use when you need to find where relevant code lives.
 
-> "Find all files related to [specific aspect of the task]. Return: file path, relevant line ranges, and a one-sentence purpose for each file. Organize by: implementation files, test files, configuration, type definitions. Do NOT analyze or summarize — just locate and categorize. You are a documentarian, not a critic."
+> "Find all files related to [specific aspect of the task]. Limit results to the 15 most relevant files — prioritize files that will be directly modified or define interfaces the implementation must follow. Exclude test files, generated files, and vendored dependencies unless specifically relevant. Return: file path, relevant line ranges, and a one-sentence purpose for each file. Organize by: implementation files, test files, configuration, type definitions. Do NOT analyze or summarize — just locate and categorize. You are a documentarian, not a critic."
 
 ### Pattern Finder Agent
 Use when you need to understand existing patterns the implementation should follow.
@@ -62,9 +88,20 @@ Use when you need to understand existing patterns the implementation should foll
 ### Flow Tracer Agent
 Use when you need to understand how data or control flows through the system.
 
-> "Trace the data/control flow for [specific flow]. Return: entry point (file:line), each transformation step with what happens (file:line), exit point (file:line). Include error handling paths. Do NOT suggest improvements to the flow. You are a documentarian, not a critic."
+> "Trace the data/control flow for [specific flow]. Return: entry point (file:line), each transformation step with what happens (file:line), exit point (file:line). **Separately list each error handling path**: for every try/catch, error callback, or fallback, document what triggers it, what it does, and where control goes next (file:line). Do NOT suggest improvements to the flow. You are a documentarian, not a critic."
 
-Select 2-3 of these based on the task. Not every task needs all three. Wait for ALL agents to complete before proceeding.
+### Test Coverage Analyzer Agent
+Use when you need to understand existing test coverage for the area being modified.
+
+> "Find all test files related to [specific area]. For each test file, return: file path, what it tests (which module/function), testing patterns used (mocking strategy, fixtures, setup/teardown), and what's NOT covered (areas without test assertions). Do NOT evaluate test quality — just document what exists. You are a documentarian, not a critic."
+
+Select 2-4 of these based on the task. Not every task needs all four. Wait for ALL agents to complete before proceeding.
+
+After agents return, assess each result:
+- If an agent returned no results or clearly incomplete data (e.g., 0 files found for a broad query), flag it to the user via `AskUserQuestion`:
+  - **"Re-run this agent"** — Re-spawn with adjusted prompt
+  - **"Proceed without it"** — Continue with available data, noting the gap in the artifact
+- If all agents returned substantive results, proceed to Step 6.
 
 ---
 
@@ -95,21 +132,44 @@ Use real values throughout — never placeholder text. Target 150-250 lines.
 
 ## Step 8: Present the Artifact
 
-Read the artifact file and output its full contents as markdown in the conversation so the user can review it in a formatted view.
+Read the artifact file. Before outputting its contents, present a header:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Research Artifact
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Then output the full artifact contents as markdown in the conversation so the user can review it in a formatted view.
 
 ---
 
 ## Step 9: Checkpoint
 
-Present a brief summary (key findings, key files, open questions), then use `AskUserQuestion`:
+Present a formatted status banner following the Status Banner template from `_plans-config.md`:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Research Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  → <N> relevant files identified
+  → <N> patterns documented
+  → <N> open questions for planning
+
+Artifact: <full artifact path>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Then use `AskUserQuestion`:
 
 - **Question**: "Research is complete. How would you like to proceed?"
 - **Options**:
   1. **"Proceed to planning"** — "Move on to /plan with this research artifact"
   2. **"Revise research"** — "Provide feedback to update or deepen the research"
-  3. **"Stop here"** — "End here — use /plan later when ready"
+  3. **"Stop here"** — "End here — resume later with `/plan <artifact-path>`"
 
-Handle each response accordingly. Always provide the full artifact path for resume commands.
+Handle each response accordingly. When the user chooses "Stop here", always provide the exact resume command with the full artifact path.
 
 ---
 

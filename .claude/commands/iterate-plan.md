@@ -13,6 +13,30 @@ $ARGUMENTS
 
 ---
 
+## Step 0: Check Arguments
+
+If `$ARGUMENTS` is empty or contains only whitespace, present usage help following the Usage Help template from `_plans-config.md` and stop:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◇ Iterate Plan
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Usage: /iterate-plan <plan-artifact-path>
+
+Updates an existing plan based on feedback,
+new requirements, or execution learnings.
+Preserves completed phases.
+
+Example:
+  /iterate-plan ~/.claude/.../plan-2026-04-08-auth-api.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Do NOT proceed to Step 1. Return after showing usage.
+
+---
+
 ## Step 1: Load the Plan
 
 If `$ARGUMENTS` contains a file path, read the plan artifact FULLY. If no path provided, ask the user for one.
@@ -23,11 +47,29 @@ If `$ARGUMENTS` contains a file path, read the plan artifact FULLY. If no path p
 
 Read the research artifact path from the plan's header/frontmatter. If it exists, read it FULLY for context.
 
+After reading the research artifact, compare its `commit` to current HEAD. If they differ significantly (5+ commits), flag: "The research this plan is based on may be outdated ({N} commits behind). Consider whether the changes affect your iteration."
+
 ---
 
 ## Step 3: Present Current State
 
-Present: plan name, phase names with 1-sentence descriptions, completion state (which phases have `- [x]` checkboxes), and the plan's current scope (including "What We're NOT Doing").
+Present using a formatted phase tracker:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+▶ Iterating: <plan name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ◆ Phase 1: <name> — implemented
+  ◆ Phase 2: <name> — implemented
+  ◇ Phase 3: <name> — pending
+  ◇ Phase 4: <name> — pending
+
+Scope: <"What We're NOT Doing" summary>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Use ◆ for phases with `- [x]` checkboxes (implemented) and ◇ for pending phases.
 
 ---
 
@@ -87,7 +129,15 @@ Modify the plan artifact in place:
 
 ## Step 9: Present Updated Plan
 
-Read the updated artifact and output its full contents as markdown. Provide the artifact path for reference.
+Read the updated artifact. Before outputting its contents, present a header:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Plan Updated
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Then output the full artifact contents as markdown. Provide the artifact path for reference and the resume command: `/execute-plan <artifact-path>`.
 
 ---
 

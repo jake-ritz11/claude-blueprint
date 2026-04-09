@@ -13,6 +13,30 @@ $ARGUMENTS
 
 ---
 
+## Step 0: Check Arguments
+
+If `$ARGUMENTS` is empty or contains only whitespace, present usage help following the Usage Help template from `_plans-config.md` and stop:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◇ Validate Plan
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Usage: /validate-plan <plan-artifact-path>
+
+Post-execution validation — runs all
+automated checks from all phases, verifies
+expected changes exist, reports deviations.
+
+Example:
+  /validate-plan ~/.claude/.../plan-2026-04-08-auth-api.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Do NOT proceed to Step 1. Return after showing usage.
+
+---
+
 ## Step 1: Load the Plan
 
 If `$ARGUMENTS` contains a file path, read the plan artifact FULLY. If no path provided, ask the user for one.
@@ -37,12 +61,29 @@ For each phase, check that the expected changes actually exist in the codebase:
 
 ## Step 4: Compile Validation Report
 
-Present results organized by phase:
+Present results with a formatted report:
 
-- **Passing checks**: Automated verifications that succeeded
-- **Failing checks**: Automated verifications that failed (with output)
-- **Deviations**: Where implementation differs from plan (with severity: cosmetic / functional / missing)
-- **Missing items**: Plan items that weren't implemented
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Validation Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Phase 1: <name>
+  ✓ Lint passed
+  ✓ Tests passed
+  ✓ All expected files exist
+
+Phase 2: <name>
+  ✓ Lint passed
+  ✗ 2 test failures
+  → file.spec.ts:45 — assertion error
+  → file.spec.ts:78 — timeout
+
+Overall: <N>/<M> checks passed
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Use `✓` for passed checks, `✗` for failures, and `→` for details on failures. After the banner, list any deviations (with severity: cosmetic / functional / missing) and missing items.
 
 ---
 

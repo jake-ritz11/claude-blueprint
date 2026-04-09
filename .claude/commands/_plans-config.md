@@ -75,3 +75,92 @@ Read the relevant standards files for the file types being modified. Also check 
 
 - A knowledge/gotchas directory if your project maintains one
 - Feature-specific documentation near the code being changed
+
+## Output Formatting
+
+All commands should use these conventions for conversation output (not artifact files). Read this section and apply the formatting vocabulary consistently across all phases. These formats are templates — fill in the actual values.
+
+### Symbols
+
+| Symbol | Meaning | Usage |
+|--------|---------|-------|
+| ◆ | Completed phase/item | `◆ Research — complete` |
+| ▶ | Active/in-progress | `▶ Plan — in progress` |
+| ◇ | Pending/not started | `◇ Execute — pending` |
+| ✓ | Check passed | `✓ Lint passed` |
+| ✗ | Check failed | `✗ 3 test failures` |
+| → | Detail/sub-item | `  → 12 files identified` |
+| ━ | Horizontal rule (heavy) | Banner borders |
+
+### Status Banners
+
+At every checkpoint, present a status banner before `AskUserQuestion`:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ <Phase Name> Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  → <key finding 1>
+  → <key finding 2>
+  → <key finding 3>
+
+Artifact: <path>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Phase Tracker
+
+When showing workflow progress (used by `/blueprint` and at major checkpoints):
+
+```
+◆ Research     complete
+▶ Plan         in progress
+◇ Execute      pending
+◇ Validate     pending
+```
+
+### Execution Progress
+
+When starting a phase during `/execute-plan`:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+▶ Phase 2 of 4: Data Layer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+When completing a phase:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Phase 2 of 4: Data Layer — Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Automated checks:
+  ✓ Lint passed
+  ✓ Tests passed (42 specs)
+
+Manual checks needed:
+  ◇ Verify API response shape matches spec
+  ◇ Confirm migration runs cleanly
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Usage Help
+
+When a command is invoked with empty `$ARGUMENTS`, show usage help and stop:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◇ <Command Name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Usage: /<command> <arguments>
+
+<1-3 line description>
+
+Example:
+  /<command> <example args>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```

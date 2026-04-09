@@ -24,6 +24,7 @@ curl -sL https://raw.githubusercontent.com/jake-ritz11/claude-blueprint/main/ins
 ```
 
 Or copy manually:
+
 ```bash
 cp -r path/to/claude-blueprint/.claude .
 ```
@@ -49,19 +50,21 @@ Blueprint generates structured artifacts at each phase. See real examples:
 ```markdown
 ## Relevant Files
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| src/routes/users.ts | 1-89 | Existing user endpoints — follows router pattern to extend |
-| src/middleware/auth.ts | 12-45 | Auth middleware — applied to all /users routes |
-| src/repositories/user.repository.ts | 1-67 | User repo — pattern to follow for preferences repo |
+| File                                | Lines | Purpose                                                    |
+| ----------------------------------- | ----- | ---------------------------------------------------------- |
+| src/routes/users.ts                 | 1-89  | Existing user endpoints — follows router pattern to extend |
+| src/middleware/auth.ts              | 12-45 | Auth middleware — applied to all /users routes             |
+| src/repositories/user.repository.ts | 1-67  | User repo — pattern to follow for preferences repo         |
 
 ## Existing Patterns
 
 ### Route Registration
+
 All routes follow Express Router pattern with Zod validation middleware.
 Routes are registered in `src/routes/index.ts` with a prefix.
 
 ### Repository Pattern
+
 Database access uses a repository class per entity with standard
 CRUD methods. All queries use parameterized prepared statements.
 ```
@@ -72,35 +75,55 @@ CRUD methods. All queries use parameterized prepared statements.
 
 ```
 /blueprint "Add user preferences API"
-       │
-       ▼
- ┌─────────────┐
- │  Research    │ → Spawns specialized agents, maps the codebase
- │  (~200 lines)│ → Writes research artifact with file:line refs
- └──────┬──────┘
-        │  ✓ Human checkpoint — review findings
-        │  ✓ Context compaction (/compact)
-        ▼
- ┌─────────────┐
- │  Plan        │ → Reads research artifact in fresh context
- │  (~200 lines)│ → Writes phased plan with verification gates
- └──────┬──────┘
-        │  ✓ Human checkpoint — review/adjust plan
-        │  ✓ Context compaction (/compact)
-        ▼
- ┌─────────────┐
- │  Execute     │ → Reads plan artifact in fresh context
- │  (per phase) │ → Implements one phase at a time
- └──────┬──────┘   → Runs tests, pauses for verification
-        │
-        ▼
- ┌─────────────┐
- │  Validate   │ → Re-runs ALL checks from ALL phases
- │  (optional) │ → Catches cross-phase regressions
- └─────────────┘
-
- At any point: /iterate-plan <path> to revise the plan
 ```
+
+The command orchestrates three phases, showing progress at each transition:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Blueprint
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ▶ Research     starting        ← Spawns agents, maps codebase
+  ◇ Plan         pending           Writes ~200-line artifact
+  ◇ Execute      pending
+
+Task: Add user preferences API
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+At each checkpoint you review findings, then context compacts and the next phase starts fresh:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Research Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  → 12 relevant files identified
+  → 3 patterns documented
+  → 2 open questions for planning
+
+Artifact: ~/.claude/.../research-2026-04-08-user-prefs.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Execution runs phase-by-phase with verification at each step:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆ Phase 2 of 3: Data Layer — Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Automated checks:
+  ✓ Lint passed
+  ✓ Tests passed (42 specs)
+
+Manual checks needed:
+  ◇ Verify API response shape matches spec
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+At any point: `/iterate-plan <path>` to revise the plan.
 
 Each phase produces a standalone artifact with YAML frontmatter. You can stop at any checkpoint and resume later:
 
@@ -115,24 +138,24 @@ Each phase produces a standalone artifact with YAML frontmatter. You can stop at
 
 ### Core Workflow
 
-| Command | Description |
-| --- | --- |
-| `/blueprint` | Runs the full research > plan > execute pipeline with checkpoints between each phase. **Start here.** |
-| `/research` | Researches the codebase using specialized agents and writes a structured artifact with file:line refs, data flows, constraints, and open questions. |
-| `/plan` | Reads a research artifact and produces a phased implementation plan with design options, verification checklists, and code snippets. |
+| Command         | Description                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/blueprint`    | Runs the full research > plan > execute pipeline with checkpoints between each phase. **Start here.**                                                          |
+| `/research`     | Researches the codebase using specialized agents and writes a structured artifact with file:line refs, data flows, constraints, and open questions.            |
+| `/plan`         | Reads a research artifact and produces a phased implementation plan with design options, verification checklists, and code snippets.                           |
 | `/execute-plan` | Implements a plan phase by phase with verification pauses. Tracks progress via checkboxes, runs lint/tests, and recommends context compaction after 3+ phases. |
 
 ### Lifecycle Commands
 
-| Command | Description |
-| --- | --- |
-| `/iterate-plan` | Updates an existing plan based on feedback, new requirements, or execution learnings. Preserves completed phases. |
+| Command          | Description                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/iterate-plan`  | Updates an existing plan based on feedback, new requirements, or execution learnings. Preserves completed phases.           |
 | `/validate-plan` | Post-execution validation — runs all automated checks from all phases, verifies expected changes exist, reports deviations. |
 
 ### Shared Config
 
-| File | Description |
-| --- | --- |
+| File               | Description                                                                                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `_plans-config.md` | Shared config for all commands. Defines artifact naming, YAML frontmatter template, size guidelines, and standards file locations. **Customize this for your project.** |
 
 ## Customization
@@ -171,6 +194,7 @@ See [`examples/`](examples/) for full configurations for Angular, React, and Pyt
 ## Examples
 
 See [`examples/`](examples/) for:
+
 - Project configurations for Angular, React, and Python
 - Sample research and plan artifacts showing what the workflow produces
 
