@@ -1,6 +1,6 @@
 ---
 description: Research the codebase around a task and produce a research artifact
-model: opus
+model: claude-opus-4-7
 ---
 
 # Research Codebase
@@ -19,24 +19,16 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help following the Usage Help template from `_plans-config.md` and stop:
+If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◇ Research
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```markdown
+## `/research` — Research the codebase for a task
 
-Usage: /research <task description>
+Uses specialized agents to map the codebase and writes a structured artifact with file:line refs, data flows, and constraints.
 
-Researches the codebase using specialized
-agents and writes a structured artifact
-with file:line refs, data flows, and
-constraints.
+**Usage:** `/research <task description>`
 
-Example:
-  /research Add user preferences API
-  /research Fix auth middleware timeout
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Example:** `/research Add user preferences API`
 ```
 
 Do NOT proceed to Step 1. Return after showing usage.
@@ -73,7 +65,13 @@ Use `TodoWrite` to create one task per research area (2-4 areas). Break the task
 
 ## Step 5: Spawn Specialized Agents
 
-Launch 2-3 agents in **parallel** (single message). Choose from these three agent patterns based on the task:
+<parallel_subagent_requirement>
+Launch 2-3 agents in the **same message** as parallel tool calls. Do NOT fall back to sequential launches — context-isolation is the point of this step, and serial spawns defeat it. If you cannot launch in parallel (for example, a tool error blocks a launch), stop and report the block to the user via `AskUserQuestion` rather than silently collapsing to sequential.
+
+Claude Opus 4.7 spawns fewer subagents by default than prior models. Override that default here: fanning out is explicitly the right choice for this step because each agent gets a fresh context and returns only its conclusions.
+</parallel_subagent_requirement>
+
+Choose from these three agent patterns based on the task:
 
 ### Locator Agent
 Use when you need to find where relevant code lives.
@@ -98,6 +96,7 @@ Use when you need to understand existing test coverage for the area being modifi
 Select 2-4 of these based on the task. Not every task needs all four. Wait for ALL agents to complete before proceeding.
 
 After agents return, assess each result:
+- **Verify parallel execution**: confirm the agents ran in the same message (parallel tool calls), not sequentially. If they ran sequentially, note this at the end of the research artifact under a `## Notes` footer — the plan phase should know the research may have coverage gaps.
 - If an agent returned no results or clearly incomplete data (e.g., 0 files found for a broad query), flag it to the user via `AskUserQuestion`:
   - **"Re-run this agent"** — Re-spawn with adjusted prompt
   - **"Proceed without it"** — Continue with available data, noting the gap in the artifact
@@ -132,12 +131,10 @@ Use real values throughout — never placeholder text. Target 150-250 lines.
 
 ## Step 8: Present the Artifact
 
-Read the artifact file. Before outputting its contents, present a header:
+Read the artifact file. Before outputting its contents, present a plain bold label (no leading rule — the "Research — complete" checkpoint right after carries the moment):
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◆ Research Artifact
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Research artifact**
 ```
 
 Then output the full artifact contents as markdown in the conversation so the user can review it in a formatted view.
@@ -146,19 +143,17 @@ Then output the full artifact contents as markdown in the conversation so the us
 
 ## Step 9: Checkpoint
 
-Present a formatted status banner following the Status Banner template from `_plans-config.md`:
+Present a checkpoint banner (Form 3 in `_plans-config.md`):
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◆ Research Complete
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+─────────────────────────────────────────────
+**Research — complete**
 
-  → <N> relevant files identified
-  → <N> patterns documented
-  → <N> open questions for planning
+  <N> relevant files identified
+  <N> patterns documented
+  <N> open questions for planning
 
-Artifact: <full artifact path>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Artifact: <full artifact path>
 ```
 
 Then use `AskUserQuestion`:

@@ -1,11 +1,23 @@
 ---
 description: Read a research artifact and create a detailed, phased implementation plan
-model: opus
+model: claude-opus-4-7
 ---
 
 # Create Implementation Plan
 
 Create a precise, actionable implementation plan. Work collaboratively — present options and get buy-in before writing. **No open questions allowed in the final plan.**
+
+## Scope Discipline
+
+<scope_discipline>
+This plan should describe only what is needed to accomplish the task in the research artifact. Do NOT:
+- Add features, refactors, or "improvements" not present in the research's Open Questions or the user's answers during this command
+- Add defensive error handling for conditions the research does not surface as real
+- Create abstractions or helpers for hypothetical future reuse
+- Expand the "What We're NOT Doing" section into a wish list — it is for explicit exclusions tied to the current task
+
+If you catch yourself writing a phase that isn't traceable to a research finding or a user answer, delete it.
+</scope_discipline>
 
 ## User-Provided Context
 
@@ -15,23 +27,16 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help following the Usage Help template from `_plans-config.md` and stop:
+If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◇ Plan
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```markdown
+## `/plan` — Create implementation plan
 
-Usage: /plan <research-artifact-path>
+Reads a research artifact and produces a phased implementation plan with design options, verification checklists, and code snippets.
 
-Reads a research artifact and creates a
-phased implementation plan with design
-options, verification checklists, and
-code snippets.
+**Usage:** `/plan <research-artifact-path>`
 
-Example:
-  /plan ~/.claude/.../research-2026-04-08-auth-api.md
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Example:** `/plan ~/.claude/.../research-2026-04-08-auth-api.md`
 ```
 
 Do NOT proceed to Step 1. Return after showing usage.
@@ -73,12 +78,10 @@ Read `.claude/commands/_plans-config.md` and follow it to derive `$PLANS_DIR` an
 
 ## Step 5: Present Understanding
 
-Present with a formatted header:
+Present with a one-line marker (Form 4 style in `_plans-config.md`):
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-▶ Planning: <task name>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+── Planning — <task name> ──
 ```
 
 Then present (no user input needed yet):
@@ -86,6 +89,10 @@ Then present (no user input needed yet):
 - **Task**: 1-2 sentences on what needs to happen
 - **Key files**: Most critical file:line discoveries from the research and your own reading
 - **New findings**: Anything the code reveals that wasn't in the research
+
+<ground_in_research>
+Each bullet under "Task" and "Key files" must cite a specific section or direct quote from the research artifact (e.g., "Per research §Existing Patterns: 'all routes follow Express Router pattern'"). If you can't find a quote or section reference to back a bullet, it is speculation — either verify it in the code before including it, or drop it. "New findings" are the only sub-section allowed to contain content not in the research, and each new finding must cite the file:line where you verified it.
+</ground_in_research>
 
 Verify assumptions with code — do NOT just accept what the user says without checking.
 
@@ -130,6 +137,7 @@ Required sections:
 **Per phase**:
 
 - **Overview**: What it accomplishes and why it's in this order
+- **Scope note**: 1-2 sentences stating what this phase explicitly does NOT cover. Prevents scope drift during execution. Example: "Does not touch the shared authentication middleware; that's Phase 3."
 - **Files to Change**: Each file with change summary and key code snippets
 - **Automated Verification**: Checkboxes for runnable commands only (lint, test, build). These must be commands that can be copy-pasted into a terminal.
 - **Manual Verification**: Checkboxes for human-observable behaviors only (click X, verify Y appears, confirm Z works).
@@ -144,12 +152,10 @@ All code snippets must comply with your project's coding standards.
 
 ## Step 10: Present the Artifact
 
-Read the artifact file. Before outputting its contents, present a header:
+Read the artifact file. Before outputting its contents, present a plain bold label (no leading rule — the "Plan — complete" checkpoint right after carries the moment):
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◆ Plan Artifact
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Plan artifact**
 ```
 
 Then output the full artifact contents as markdown in the conversation so the user can review it in a formatted view.
@@ -158,19 +164,17 @@ Then output the full artifact contents as markdown in the conversation so the us
 
 ## Step 11: Present Plan for Review
 
-Present a formatted status banner following the Status Banner template from `_plans-config.md`:
+Present a checkpoint banner (Form 3 in `_plans-config.md`):
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◆ Plan Complete
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+─────────────────────────────────────────────
+**Plan — complete**
 
-  → <N> phases defined
-  → <N> files to modify
-  → <N> verification checks
+  <N> phases defined
+  <N> files to modify
+  <N> verification checks
 
-Artifact: <full artifact path>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Artifact: <full artifact path>
 ```
 
 Then use `AskUserQuestion`:

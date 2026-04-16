@@ -1,11 +1,23 @@
 ---
 description: Update an existing plan based on feedback, new requirements, or execution learnings
-model: opus
+model: claude-opus-4-7
 ---
 
 # Iterate Plan
 
 Update an existing plan without starting over. Surgically modify affected phases while preserving completed work and unaffected sections.
+
+## Scope Discipline
+
+<scope_discipline>
+Iteration is for **surgical updates**, not plan rewrites. The user came here because something small (or medium) changed — a new requirement, an execution learning, a scope adjustment. Do NOT:
+- Expand the plan beyond what the user's feedback requires
+- Add phases that weren't in the original plan unless explicitly requested
+- Rewrite unaffected phases just because you read them
+- Treat iteration as a chance to "improve" the plan overall
+
+If the change is large enough to invalidate most of the plan, recommend `/research` and a fresh `/plan` instead of iterating — tell the user that and let them decide.
+</scope_discipline>
 
 ## User-Provided Context
 
@@ -15,22 +27,16 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help following the Usage Help template from `_plans-config.md` and stop:
+If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◇ Iterate Plan
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```markdown
+## `/iterate-plan` — Update an existing plan
 
-Usage: /iterate-plan <plan-artifact-path>
+Updates an existing plan based on feedback, new requirements, or execution learnings. Preserves completed phases.
 
-Updates an existing plan based on feedback,
-new requirements, or execution learnings.
-Preserves completed phases.
+**Usage:** `/iterate-plan <plan-artifact-path>`
 
-Example:
-  /iterate-plan ~/.claude/.../plan-2026-04-08-auth-api.md
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Example:** `/iterate-plan ~/.claude/.../plan-2026-04-08-auth-api.md`
 ```
 
 Do NOT proceed to Step 1. Return after showing usage.
@@ -53,23 +59,21 @@ After reading the research artifact, compare its `commit` to current HEAD. If th
 
 ## Step 3: Present Current State
 
-Present using a formatted phase tracker:
+Present a checkpoint banner (Form 3 in `_plans-config.md`) with plain-word state per phase:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-▶ Iterating: <plan name>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+─────────────────────────────────────────────
+**Iterating — <plan name>**
 
-  ◆ Phase 1: <name> — implemented
-  ◆ Phase 2: <name> — implemented
-  ◇ Phase 3: <name> — pending
-  ◇ Phase 4: <name> — pending
+  Phase 1: <name> — implemented
+  Phase 2: <name> — implemented
+  Phase 3: <name> — pending
+  Phase 4: <name> — pending
 
-Scope: <"What We're NOT Doing" summary>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Scope: <"What We're NOT Doing" summary>
 ```
 
-Use ◆ for phases with `- [x]` checkboxes (implemented) and ◇ for pending phases.
+Determine state from checkbox status: phases with all `- [x]` boxes are `implemented`; otherwise `pending`. Use plain words — no glyphs.
 
 ---
 
@@ -129,12 +133,10 @@ Modify the plan artifact in place:
 
 ## Step 9: Present Updated Plan
 
-Read the updated artifact. Before outputting its contents, present a header:
+Read the updated artifact. Before outputting its contents, present a plain bold label (no leading rule — this is a section label, not a checkpoint moment):
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◆ Plan Updated
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Plan updated**
 ```
 
 Then output the full artifact contents as markdown. Provide the artifact path for reference and the resume command: `/execute-plan <artifact-path>`.

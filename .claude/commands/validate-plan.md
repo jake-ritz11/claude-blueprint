@@ -1,6 +1,6 @@
 ---
 description: Validate that implementation matches the plan — run all checks and verify expected changes exist
-model: opus
+model: claude-opus-4-7
 ---
 
 # Validate Plan
@@ -15,31 +15,29 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help following the Usage Help template from `_plans-config.md` and stop:
+If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◇ Validate Plan
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```markdown
+## `/validate-plan` — Validate implementation against a plan
 
-Usage: /validate-plan <plan-artifact-path>
+Post-execution validation — runs all automated checks from all phases, verifies expected changes exist, and reports deviations.
 
-Post-execution validation — runs all
-automated checks from all phases, verifies
-expected changes exist, reports deviations.
+**Usage:** `/validate-plan <plan-artifact-path>`
 
-Example:
-  /validate-plan ~/.claude/.../plan-2026-04-08-auth-api.md
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Example:** `/validate-plan ~/.claude/.../plan-2026-04-08-auth-api.md`
 ```
 
 Do NOT proceed to Step 1. Return after showing usage.
 
 ---
 
-## Step 1: Load the Plan
+## Step 1: Load the Plan and State
 
 If `$ARGUMENTS` contains a file path, read the plan artifact FULLY. If no path provided, ask the user for one.
+
+Then look for a sibling `state.json` file (same directory, basename with `.state.json` extension). If found, read it — it records what `/execute-plan` actually ran: phases completed, files changed, automated check results per phase, manual checks confirmed. Use this to distinguish "validation against the plan" from "validation of what was executed" when they differ.
+
+If no `state.json` exists, note it in the report — this plan was either implemented manually or with an older execute-plan version, and validation will rely entirely on checkbox marks and code inspection.
 
 ---
 
@@ -61,29 +59,26 @@ For each phase, check that the expected changes actually exist in the codebase:
 
 ## Step 4: Compile Validation Report
 
-Present results with a formatted report:
+Present results with a validation report (Form 5 style, grouped by phase):
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-◆ Validation Report
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Validation report**
 
-Phase 1: <name>
-  ✓ Lint passed
-  ✓ Tests passed
-  ✓ All expected files exist
+  Phase 1: <name>
+    ✓ Lint passed
+    ✓ Tests passed
+    ✓ All expected files exist
 
-Phase 2: <name>
-  ✓ Lint passed
-  ✗ 2 test failures
-  → file.spec.ts:45 — assertion error
-  → file.spec.ts:78 — timeout
+  Phase 2: <name>
+    ✓ Lint passed
+    ✗ 2 test failures
+      - file.spec.ts:45 — assertion error
+      - file.spec.ts:78 — timeout
 
-Overall: <N>/<M> checks passed
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Result: <N>/<M> checks passed.
 ```
 
-Use `✓` for passed checks, `✗` for failures, and `→` for details on failures. After the banner, list any deviations (with severity: cosmetic / functional / missing) and missing items.
+Use `✓` for passed checks and `✗` for failures. Nest failure details as plain `-` bullets under the failing check. After the report, list any deviations (with severity: cosmetic / functional / missing) and missing items.
 
 ---
 
@@ -122,3 +117,4 @@ Update the plan artifact:
 - Run ALL automated checks, not just the ones from the last phase — regressions happen
 - Do not auto-fix failures — report them and let the user decide
 - Deviations from the plan aren't automatically wrong — the plan is a guide, not a contract
+- Validate against the plan as written; do NOT propose new work or additional validation steps beyond what the plan specifies. Failed checks get reported, not "fixed on the side."
