@@ -15,7 +15,7 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
+Per `_plans-config.md § Usage Help Template`: if `$ARGUMENTS` is empty or whitespace, render this usage block and stop.
 
 ```markdown
 ## `/validate-plan` — Validate implementation against a plan
@@ -26,8 +26,6 @@ Post-execution validation — runs all automated checks from all phases, verifie
 
 **Example:** `/validate-plan ~/.claude/.../plan-2026-04-08-auth-api.md`
 ```
-
-Do NOT proceed to Step 1. Return after showing usage.
 
 ---
 

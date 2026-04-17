@@ -21,6 +21,7 @@ If you're modifying or adding command files in `.claude/commands/`, follow these
 - **Step numbering**: Use `## Step N:` headers for sequential steps
 - **AskUserQuestion checkpoints**: Include human verification pauses at key decision points using the `AskUserQuestion` tool
 - **Shared config**: Reference `_plans-config.md` for artifact naming, directory paths, and standards file locations — don't hardcode these in individual commands
+- **Shared patterns**: Patterns reused across 3+ command files (the Step 0 args-check rule, `/clear`-vs-`/compact` policy, Form 1–7 output patterns) live in `_plans-config.md`. Reference them with a one-line pointer rather than inlining.
 
 ## Testing Changes
 

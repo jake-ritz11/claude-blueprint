@@ -10,6 +10,8 @@ Implement an approved plan phase by phase. **Follow the plan's intent while adap
 **Default mode**: One phase at a time, pausing for human verification.
 **Consecutive mode**: If the user says "run all phases" or "skip pauses", execute all phases but still stop at Verification Gates and run the final regression check.
 
+**Long-horizon note**: Plans span many phases. Do NOT stop early due to perceived token budget — the harness handles context. Finish the current phase, emit the state.json update, and let Step 4's context-weight check decide whether to recommend `/clear`. Truncating phases to "save tokens" is the wrong instinct here.
+
 ## Execution Discipline
 
 <investigate_before_answering>
@@ -44,7 +46,7 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
+Per `_plans-config.md § Usage Help Template`: if `$ARGUMENTS` is empty or whitespace, render this usage block and stop.
 
 ```markdown
 ## `/execute-plan` — Implement an approved plan
@@ -55,8 +57,6 @@ Implements a plan phase by phase with verification pauses. Tracks progress via c
 
 **Example:** `/execute-plan ~/.claude/.../plan-2026-04-08-auth-api.md`
 ```
-
-Do NOT proceed to Step 1. Return after showing usage.
 
 ---
 
@@ -121,9 +121,9 @@ Recommended: `/clear` this session, then resume with:
 The plan's checkbox state (and `state.json`) preserves progress — I'll pick up exactly where I left off.
 ```
 
-After completing 5+ phases in this session, escalate the language ("Strongly recommend") but emit the same exact-command banner. The user copies one line; they don't have to remember the path or the command shape.
+**After completing 5+ phases in this session, stop.** Do not begin Phase N+1. Emit a Form 3 checkpoint with: completed count, reason (FIC rule — context rot degrades silently past this point), and the exact resume command (`/clear` then `/execute-plan <full-plan-path>`). Do NOT emit an AskUserQuestion — the plan's checkbox state and `state.json` preserve progress, and a user who wants to push through re-invokes `/execute-plan` deliberately.
 
-Do NOT silently continue with degraded output quality. The plan's checkbox state and `state.json` are designed for exactly this purpose. Prefer `/clear` over `/compact` — a fresh context window eliminates rot, while compaction summarizes and still carries stale tokens.
+Do NOT silently continue with degraded output quality. The plan's checkbox state and `state.json` are designed for exactly this purpose. Per `_plans-config.md <clear_vs_compact>`.
 
 ---
 
@@ -139,7 +139,7 @@ Before starting implementation, display the phase-start marker (Form 4 in `_plan
 
 Execute all changes listed. Follow code snippets faithfully. Apply all project coding standards.
 
-**If reality doesn't match the plan**: STOP. Present what the plan expected vs. what actually exists (with file:line), explain impact, and wait for guidance.
+**If reality doesn't match the plan**: STOP. Before presenting, think carefully about the mismatch: is it a scope issue (plan assumed X, code has Y) or a dependency issue (prerequisite missing)? Surface the categorization to the user, not just the symptom. Present what the plan expected vs. what actually exists (with file:line), explain impact, and wait for guidance.
 
 ---
 
@@ -175,6 +175,16 @@ Then write/update a `state.json` file alongside the plan artifact (same director
 ```
 
 If `state.json` already exists (resuming from a previous session), read it first and update in place — preserve `started_at` and extend arrays rather than overwriting.
+
+**Validation before write.** When `state.json` already exists, run three checks before updating it. Never silently overwrite:
+
+1. **Parses as JSON** — wrap the read in try/catch.
+2. **Has required keys** — `plan_path`, `started_at`, `last_phase_completed`, `total_phases` must all be present.
+3. **`last_phase_completed` is an integer ≤ current phase number** — a value higher than the phase you're about to write means the file is from a different run.
+
+On any failure, STOP and emit an `AskUserQuestion`:
+- **"Rebuild state"** — Delete the file and start fresh from Phase 1's state. Resume history is lost.
+- **"Stop and inspect"** — End execution so the user can inspect `state.json` manually. Provide the resume command `/execute-plan <plan-path>`.
 
 This file is the machine-readable handoff. `/validate-plan` reads it first to understand what was actually run versus what the plan specified.
 

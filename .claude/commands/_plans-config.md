@@ -52,11 +52,23 @@ research: <path to research artifact, plan artifacts only>
 
 ## Context Management
 
+<clear_vs_compact>
 Each phase of the blueprint workflow (research, plan, execute) is designed to run in a fresh context window. Between phases, **prefer `/clear` over `/compact`** — the artifact file path is all that needs to carry forward, and a fresh window eliminates context rot entirely (versus a summarized one that still carries stale tokens).
 
 Use `/compact` only when you need to preserve mid-task conversation state (for example, mid-correction where the user's recent steering still matters). In the normal phase-to-phase flow, `/clear` is the right tool.
 
 This is the core principle: **artifacts are the product, not the conversation**. Keep conversation context lean; keep artifacts precise.
+</clear_vs_compact>
+
+Other files cross-reference this policy as: **per `_plans-config.md <clear_vs_compact>`**. This is the single authoritative statement; do not re-inline it elsewhere.
+
+## Usage Help Template
+
+Every command begins with a Step 0 args-check. The rule is shared here; each command inlines its own Form 1 usage block so the model can emit usage help without resolving this reference.
+
+**Rule:** If `$ARGUMENTS` is empty or contains only whitespace, render the command's Form 1 usage block (see Form 1 below) and stop. Do NOT proceed further. This check is non-negotiable — empty args always mean "show usage."
+
+Each command file references this rule in its own Step 0 and inlines the command-specific Form 1 content (command name, description, usage string, example) verbatim. The content stays inline; only the rule is shared.
 
 ## Standards Files (Project-Specific)
 
@@ -136,6 +148,21 @@ The "moment" banner — used for research complete, plan complete, artifact pres
   Artifact: <path>
 ```
 
+**Resume-point variant** — when a checkpoint offers a "Stop and resume later" option, append a resume line below the Artifact field:
+
+```
+─────────────────────────────────────────────
+**<Phase Name> — paused**
+
+  <key finding 1>
+  <key finding 2>
+
+  Artifact: <path>
+  Resume: `/<command> <exact-path>`
+```
+
+The resume command must be copy-paste ready — include the full absolute path, not a placeholder.
+
 ### Form 4 — Phase start marker (execute, one line)
 
 When starting a phase during `/execute-plan`:
@@ -195,6 +222,11 @@ For informational setup banners (session setup, context-heavy advisory). Reads l
 - **Effort:** `xhigh` recommended (or `high` for budget work)
 - **Mode:** After plan approval, Shift+Tab enables auto mode
 - **Alerts:** Set task-completion notifications if your harness supports them
+
+**Session controls**
+- **Rewind:** Double-Esc (`/rewind`) reverses the last agent turn if it went off-track
+- **Usage:** `/usage` shows remaining context and rate-limit budget
+- **Max output:** For `xhigh` or `max` effort modes, set `max_tokens: 64000` in your harness if configurable — prevents truncation on long phase outputs
 
 Proceeding to research.
 ```

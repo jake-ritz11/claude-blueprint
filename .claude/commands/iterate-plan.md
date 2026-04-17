@@ -27,7 +27,7 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
+Per `_plans-config.md § Usage Help Template`: if `$ARGUMENTS` is empty or whitespace, render this usage block and stop.
 
 ```markdown
 ## `/iterate-plan` — Update an existing plan
@@ -38,8 +38,6 @@ Updates an existing plan based on feedback, new requirements, or execution learn
 
 **Example:** `/iterate-plan ~/.claude/.../plan-2026-04-08-auth-api.md`
 ```
-
-Do NOT proceed to Step 1. Return after showing usage.
 
 ---
 
@@ -97,6 +95,8 @@ If the change requires understanding code you haven't read, spawn a targeted `Ex
 ---
 
 ## Step 6: Assess Impact
+
+Think carefully before categorizing each phase. The impact on completed phases compounds — an incorrect "unaffected" classification during iteration causes regressions that only surface during execution or validation.
 
 For each phase in the plan, determine: unaffected, needs modification, needs to be added, or needs to be removed. Present this impact assessment to the user.
 

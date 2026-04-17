@@ -27,7 +27,7 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
+Per `_plans-config.md § Usage Help Template`: if `$ARGUMENTS` is empty or whitespace, render this usage block and stop.
 
 ```markdown
 ## `/plan` — Create implementation plan
@@ -38,8 +38,6 @@ Reads a research artifact and produces a phased implementation plan with design 
 
 **Example:** `/plan ~/.claude/.../research-2026-04-08-auth-api.md`
 ```
-
-Do NOT proceed to Step 1. Return after showing usage.
 
 ---
 
@@ -100,12 +98,15 @@ Verify assumptions with code — do NOT just accept what the user says without c
 
 ## Step 6: Present Design Options
 
+Before composing the AskUserQuestion, think carefully about the tradeoffs: what approaches exist, what does each constrain, which fits the research's Existing Patterns best? Consider 2-4 concrete approaches internally before presenting them — shallow options force the user to dig into the design themselves.
+
 Use `AskUserQuestion` to get the user's decision on approach:
 
 - Present 2-4 concrete approaches with pros/cons as options
 - Mark recommended option with "(Recommended)"
 - Use `preview` field for code patterns or architecture comparisons
 - Bundle additional design questions as separate questions (up to 4 per call)
+- **Always include a final `"Stop and resume later"` option.** Description: "Pause planning. Resume with `/plan <research-artifact-path>`. The research artifact is enough state to pick up exactly here." When the user selects it, print the exact resume command (`/plan` + the research artifact path from `$ARGUMENTS`) and end execution.
 
 ---
 
@@ -120,7 +121,9 @@ If answers raise new questions, spawn a targeted `Explore` agent to verify. Do N
 Present phase names with 1-sentence descriptions, then use `AskUserQuestion`:
 
 - **Question**: "Does this phase structure look right?"
-- **Options**: "Looks good" / "Adjust phases" / "Add a phase"
+- **Options**: "Looks good" / "Adjust phases" / "Add a phase" / "Stop and resume later"
+
+The **"Stop and resume later"** option description: "Pause planning. Resume with `/plan <research-artifact-path>`. The research artifact is enough state to pick up exactly here." When selected, print the exact `/plan <research-artifact-path>` resume command and end execution.
 
 ---
 

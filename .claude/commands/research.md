@@ -19,7 +19,7 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
+Per `_plans-config.md § Usage Help Template`: if `$ARGUMENTS` is empty or whitespace, render this usage block and stop.
 
 ```markdown
 ## `/research` — Research the codebase for a task
@@ -30,8 +30,6 @@ Uses specialized agents to map the codebase and writes a structured artifact wit
 
 **Example:** `/research Add user preferences API`
 ```
-
-Do NOT proceed to Step 1. Return after showing usage.
 
 ---
 
@@ -76,30 +74,36 @@ Choose from these three agent patterns based on the task:
 ### Locator Agent
 Use when you need to find where relevant code lives.
 
-> "Find all files related to [specific aspect of the task]. Limit results to the 15 most relevant files — prioritize files that will be directly modified or define interfaces the implementation must follow. Exclude test files, generated files, and vendored dependencies unless specifically relevant. Return: file path, relevant line ranges, and a one-sentence purpose for each file. Organize by: implementation files, test files, configuration, type definitions. Do NOT analyze or summarize — just locate and categorize. You are a documentarian, not a critic."
+> "Find all files related to [specific aspect of the task]. Limit results to the 15 most relevant files — prioritize files that will be directly modified or define interfaces the implementation must follow. Exclude test files, generated files, and vendored dependencies unless specifically relevant. Return: file path, relevant line ranges, and a one-sentence purpose for each file. Organize by: implementation files, test files, configuration, type definitions. Do NOT analyze or summarize — just locate and categorize. You are a documentarian, not a critic. Return at most 30 lines. Prioritize the most relevant results; do not pad."
 
 ### Pattern Finder Agent
 Use when you need to understand existing patterns the implementation should follow.
 
-> "Find existing patterns for [specific pattern type] in the codebase. For each pattern found, return: pattern name, file:line location, the exact code snippet (10-20 lines), and where else it's reused. Do NOT suggest new patterns or evaluate existing ones. You are a documentarian, not a critic."
+> "Find existing patterns for [specific pattern type] in the codebase. For each pattern found, return: pattern name, file:line location, the exact code snippet (10-20 lines), and where else it's reused. Do NOT suggest new patterns or evaluate existing ones. You are a documentarian, not a critic. Return at most 30 lines. Prioritize the most relevant results; do not pad."
 
 ### Flow Tracer Agent
 Use when you need to understand how data or control flows through the system.
 
-> "Trace the data/control flow for [specific flow]. Return: entry point (file:line), each transformation step with what happens (file:line), exit point (file:line). **Separately list each error handling path**: for every try/catch, error callback, or fallback, document what triggers it, what it does, and where control goes next (file:line). Do NOT suggest improvements to the flow. You are a documentarian, not a critic."
+> "Trace the data/control flow for [specific flow]. Return: entry point (file:line), each transformation step with what happens (file:line), exit point (file:line). **Separately list each error handling path**: for every try/catch, error callback, or fallback, document what triggers it, what it does, and where control goes next (file:line). Do NOT suggest improvements to the flow. You are a documentarian, not a critic. Return at most 30 lines. Prioritize the most relevant results; do not pad."
 
 ### Test Coverage Analyzer Agent
 Use when you need to understand existing test coverage for the area being modified.
 
-> "Find all test files related to [specific area]. For each test file, return: file path, what it tests (which module/function), testing patterns used (mocking strategy, fixtures, setup/teardown), and what's NOT covered (areas without test assertions). Do NOT evaluate test quality — just document what exists. You are a documentarian, not a critic."
+> "Find all test files related to [specific area]. For each test file, return: file path, what it tests (which module/function), testing patterns used (mocking strategy, fixtures, setup/teardown), and what's NOT covered (areas without test assertions). Do NOT evaluate test quality — just document what exists. You are a documentarian, not a critic. Return at most 30 lines. Prioritize the most relevant results; do not pad."
 
 Select 2-4 of these based on the task. Not every task needs all four. Wait for ALL agents to complete before proceeding.
 
 After agents return, assess each result:
 - **Verify parallel execution**: confirm the agents ran in the same message (parallel tool calls), not sequentially. If they ran sequentially, note this at the end of the research artifact under a `## Notes` footer — the plan phase should know the research may have coverage gaps.
-- If an agent returned no results or clearly incomplete data (e.g., 0 files found for a broad query), flag it to the user via `AskUserQuestion`:
-  - **"Re-run this agent"** — Re-spawn with adjusted prompt
-  - **"Proceed without it"** — Continue with available data, noting the gap in the artifact
+- **Apply per-agent minimum-result thresholds.** Re-spawn the agent (with a targeted prompt) if its results fall below its threshold:
+  - **Locator Agent:** <3 files for a task spec naming specific modules, or <1 file per named module → re-spawn.
+  - **Pattern Finder Agent:** 0 patterns when the task requires following existing patterns → re-spawn. (0 for greenfield code is fine — note in the artifact.)
+  - **Flow Tracer Agent:** <1 entry + 1 transformation + 1 exit returned → re-spawn.
+  - **Test Coverage Analyzer:** 0 test files for a non-trivial code area (>100 LOC) → re-spawn. A true "no coverage" should still return that observation explicitly.
+- If a re-spawn fails the threshold a second time, surface via `AskUserQuestion`:
+  - **"Proceed without this agent"** — Continue with available data, noting the gap in the artifact
+  - **"Ask a different agent type"** — Swap in a different agent pattern
+  - **"Stop — needs human guidance"** — End here, surface the gap to the user
 - If all agents returned substantive results, proceed to Step 6.
 
 ---

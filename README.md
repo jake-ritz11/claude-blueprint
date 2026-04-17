@@ -112,7 +112,7 @@ Execution runs phase-by-phase with verification at each step:
 
 At any point: `/iterate-plan <path>` to revise the plan.
 
-Each phase produces a standalone artifact with YAML frontmatter. You can stop at any checkpoint and resume later:
+Each phase produces a standalone artifact with YAML frontmatter. You can stop at artifact-level checkpoints and resume later. Mid-plan pauses (design options, phase buy-in) now offer "Stop and resume later" options too; they resume from the research artifact path:
 
 ```
 /plan <research-artifact-path>
@@ -137,6 +137,8 @@ Claude Code power users learn a set of practices — spec the task upfront, bran
 | Confirm before destructive actions ([prompting guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)) | Execute phase gates on `rm -rf`, `git reset --hard`, force pushes, and similar operations. |
 | Prefer `/clear` over `/compact` between tasks ([session management](https://claude.com/blog/using-claude-code-session-management-and-1m-context)) | Phase transitions emit an exact `/clear` + resume command pair — one-line copy-paste, no context rot. |
 | Track state so sessions can resume ([prompting guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)) | Execute phase writes a sibling `state.json` alongside the plan for machine-readable resume state. |
+| Think carefully at decision points before acting ([Opus 4.7 guide](https://claude.com/blog/best-practices-for-using-claude-opus-4-7-with-claude-code)) | Plan phase (design options), execute phase (reality mismatch), and iterate phase (impact categorization) each prefix their decision step with an explicit "think carefully" framing. |
+| Enforce compaction before context rot bites ([session management](https://claude.com/blog/using-claude-code-session-management-and-1m-context)) | Execute phase hard-stops after 5+ phases in one session — no opt-out button — emitting the `/clear` + exact resume command so you restart fresh. |
 
 ## Commands
 
@@ -190,9 +192,9 @@ See [`examples/`](examples/) for full configurations for Angular, React, and Pyt
 - **Just run `/blueprint`** — The full pipeline end-to-end beats using individual commands piecemeal. Checkpoints between phases give you control without losing momentum.
 - **Answer the intake honestly** — The intake at `/blueprint` entry is a one-time 4-question bundle that specifies intent, scope, focus areas, and acceptance. A good spec here prevents 10 revisions downstream.
 - **Pre-flight check** — Blueprint warns if you're about to start on `main`/`master` with uncommitted changes and offers to branch. Accept the offer — cleaning up later is always more expensive.
-- **Let it stop** — Reviewing the research artifact catches bad assumptions before they propagate into code. Reviewing the plan catches scope issues before implementation.
+- **Let it stop** — Reviewing the research artifact catches bad assumptions before they propagate into code. Reviewing the plan catches scope issues before implementation. You can also pause mid-plan at design options or phase buy-in — those checkpoints include "Stop and resume later" alongside revise/continue.
 - **Prefer `/clear` between phases** — Blueprint emits exact `/clear` + resume-command pairs at phase transitions. Paste one line, get a fresh context window, and carry only the artifact path forward. Beats `/compact` because there's nothing in the conversation worth keeping once the artifact is written.
-- **Resume from artifacts** — Artifacts persist. Pass the file path to `/plan` or `/execute-plan` to pick up where you left off. Checkbox state in plan files and the sibling `state.json` track execution progress.
+- **Resume from artifacts** — Artifacts persist. Pass the file path to `/plan` or `/execute-plan` to pick up where you left off. Checkbox state in plan files and the sibling `state.json` track execution progress. Mid-plan pauses use the research artifact path as resume state. `state.json` validation refuses to overwrite malformed resume data — if it's corrupt, you'll be prompted to rebuild or stop and inspect.
 - **Iterate don't restart** — Use `/iterate-plan` instead of starting over. It preserves completed work and surgically updates affected phases.
 - **Validate at the end** — Run `/validate-plan` after execution to catch regressions across phases. It reads `state.json` first so you can see what was actually executed vs. what's in the plan.
 - **Claude Opus 4.7 recommended** — All commands pin `model: claude-opus-4-7`. Opus 4.7's strengths — long-horizon agentic work, state tracking, 1M context — are exactly what this workflow leans on. Pair with `xhigh` effort for best results.

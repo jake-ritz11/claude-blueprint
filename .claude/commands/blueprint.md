@@ -21,7 +21,7 @@ $ARGUMENTS
 
 ## Step 0: Check Arguments
 
-If `$ARGUMENTS` is empty or contains only whitespace, present usage help (Form 1 in `_plans-config.md`) and stop:
+Per `_plans-config.md § Usage Help Template`: if `$ARGUMENTS` is empty or whitespace, render this usage block and stop.
 
 ```markdown
 ## `/blueprint` — Full research > plan > execute pipeline
@@ -32,8 +32,6 @@ Runs research, plan, and execute back to back with human verification between ph
 
 **Example:** `/blueprint Add user preferences API`
 ```
-
-Do NOT proceed. Return after showing usage.
 
 ---
 
@@ -101,6 +99,11 @@ Emit a one-time informational section (Form 7 in `_plans-config.md`). This is NO
 - **Effort:** `xhigh` recommended (or `high` for budget work). Adjust via `/model` or your harness settings.
 - **Mode:** After plan approval, Shift+Tab enables auto mode for trusted tasks — reduces turns.
 - **Alerts:** Set task-completion notifications if your harness supports them; long-running phases benefit.
+
+**Session controls**
+- **Rewind:** Double-Esc (`/rewind`) reverses the last agent turn if it went off-track
+- **Usage:** `/usage` shows remaining context and rate-limit budget
+- **Max output:** For `xhigh` or `max` effort modes, set `max_tokens: 64000` in your harness if configurable — prevents truncation on long phase outputs
 
 Proceeding to research.
 ```
